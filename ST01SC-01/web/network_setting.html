@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>W3.CSS Template</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link rel="stylesheet" href="/css/w3.css">
+        <!-- <link rel="stylesheet" href="css/font-awesome-min.css"> -->
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+        <!-- <link rel="stylesheet" href="css/fonts-googleapis-raleway.css"> -->
+        <!-- <link rel="stylesheet" href="css/bootstrap.min.css"> -->
+        <link rel="stylesheet" href="/css/iotadd.css">
+        <!-- <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> -->
+        <!-- <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> -->
+        <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway"> -->
+        <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
+        <style>
+        html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
+        </style>        
+    </head>
+<body class="w3-light-grey">
+    <div class="w3-bar w3-top w3-black w3-large" style="z-index:4">
+        <button class="w3-bar-item w3-button w3-hide-large w3-hover-none w3-hover-text-light-grey" onclick="w3_open();"><i class="fa fa-bars"></i>  Menu</button>
+        <span class="w3-bar-item w3-right">Logo</span>
+    </div>
+    <nav class="w3-sidebar w3-collapse w3-white w3-animate-left" style="z-index:3;width:300px;" id="mySidebar"><br>
+        <div class="w3-container w3-row">
+          <div class="w3-col s4">
+            <img src="/assets/Fiot.png" class="w3-circle w3-margin-right" style="width:80px">
+          </div>
+        </div>
+        <hr>
+        <!-- <div class="w3-container">
+          <h5>Dashboard</h5>
+        </div> -->
+        <div class="w3-bar-block">
+          <a href="#" class="w3-bar-item w3-button w3-padding-16 w3-hide-large w3-dark-grey w3-hover-black" onclick="w3_close()" title="close menu"><i class="fa fa-remove fa-fw"></i>  Close Menu</a>
+          <a href="/index.html" class="w3-bar-item w3-button w3-padding "><i class="fa fa-users fa-fw"></i>  Overview</a>
+          <!-- <a href="#" class="w3-bar-item w3-button w3-padding"><i class="fa fa-users fa-fw"></i>  Traffic</a> -->
+          <a href="/mqtt_setting.html" class="w3-bar-item w3-button w3-padding"><i class="fa fa-connectdevelop" aria-hidden="true"></i>  Mqtt setting</a>
+          <a href="/network_setting.html" class="w3-bar-item w3-button w3-padding w3-blue"><i class="fa fa-cog fa-fw"></i>  Network Settings</a><br><br>
+        </div>
+      </nav>
+
+      <!-- Overlay effect when opening sidebar on small screens -->
+    <div class="w3-overlay w3-hide-large w3-animate-opacity" onclick="w3_close()" style="cursor:pointer" title="close side menu" id="myOverlay"></div>
+
+    <!-- !PAGE CONTENT! -->
+    <div class="w3-main" style="margin-left:300px;margin-top:43px;">
+        <fieldset>
+        <form action="/net_config" method="post">
+            <div class="w3-twothird">
+                <h5 class="table-with-margin  w3-orange" >Device Network Config</h5>
+                <table class="w3-table w3-striped w3-white table-with-margin  w3-white" >
+                    <tr>
+                        <td style="width:20%">Mac Address</td>
+                        <td>
+                            <input type="text" id="mac_0" name="mac_0" style="width:5%" maxlength="2" readonly disabled > :
+                            <input type="text" id="mac_1"name="mac_1"  style="width:5%" maxlength="2" readonly disabled > :
+                            <input type="text" id="mac_2" name="mac_2" style="width:5%" maxlength="2" readonly disabled > :
+                            <input type="text" id="mac_3" name="mac_3" style="width:5%" maxlength="2" readonly disabled > :
+                            <input type="text" id="mac_4" name="mac_4" style="width:5%" maxlength="2" readonly disabled > :
+                            <input type="text" id="mac_5" name="mac_5" style="width:5%" maxlength="2" readonly disabled >
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%">DHCP Client</td>
+                        <td><input type="checkbox" align="left" id="dhcp" name="dhcp" onclick="updatedhcp();"></td>
+                    </tr>
+                    <tr>
+                        <!-- <td><i class="fa fa-user w3-text-blue w3-large"></i></td> -->
+                        <td style="width:20%">Device IP</td>
+                        <td>
+                            <input type="number" id="ip_0" name="ip_0" style="width:10%" min="0" max="255">
+                            <input type="number" id="ip_1"name="ip_1"  style="width:10%" min="0" max="255">
+                            <input type="number" id="ip_2" name="ip_2" style="width:10%" min="0" max="255">
+                            <input type="number" id="ip_3" name="ip_3" style="width:10%" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <!-- <td><i class="fa fa-user w3-text-blue w3-large"></i></td> -->
+                        <td style="width:20%">Subnet mask</td>
+                        <td>
+                            <input type="number" id="nm_0" name="nm_0" style="width:10%" min="0" max="255">
+                            <input type="number" id="nm_1"name="nm_1"  style="width:10%" min="0" max="255">
+                            <input type="number" id="nm_2" name="nm_2" style="width:10%" min="0" max="255">
+                            <input type="number" id="nm_3" name="nm_3" style="width:10%" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%">Gateway</td>
+                        <td>
+                            <input type="number" id="gw_0" name="gw_0" style="width:10%" min="0" max="255">
+                            <input type="number" id="gw_1"name="gw_1"  style="width:10%" min="0" max="255">
+                            <input type="number" id="gw_2" name="gw_2" style="width:10%" min="0" max="255">
+                            <input type="number" id="gw_3" name="gw_3" style="width:10%" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%">dns1</td>
+                        <td>
+                            <input type="number" id="dns1_0" name="dns1_0" style="width:10%" min="0" max="255">
+                            <input type="number" id="dns1_1"name="dns1_1"  style="width:10%" min="0" max="255">
+                            <input type="number" id="dns1_2" name="dns1_2" style="width:10%" min="0" max="255">
+                            <input type="number" id="dns1_3" name="dns1_3" style="width:10%" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%">dns2</td>
+                        <td>
+                            <input type="number" id="dns2_0" name="dns2_0" style="width:10%" min="0" max="255">
+                            <input type="number" id="dns2_1"name="dns2_1"  style="width:10%" min="0" max="255">
+                            <input type="number" id="dns2_2" name="dns2_2" style="width:10%" min="0" max="255">
+                            <input type="number" id="dns2_3" name="dns2_3" style="width:10%" min="0" max="255">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%"></td>
+                        <td>
+                                    <p><input type="submit" class="sm" value = "Apply config" /></p>
+                        </td>
+                    </tr>
+                </table>
+                
+            </div>
+        </form>
+
+        <form action="/admin_config" method="post">
+            <div class="w3-twothird">
+                <h5 class="table-with-margin w3-card-4 w3-yellow" style="margin-top: 10px;">Web admin config</h5>
+                <table class="w3-table w3-striped w3-white table-with-margin w3-card-4 w3-white">
+                    <tr>
+                        <td style="width:20%">User</td>
+                        <td>
+                            <input type="text" id="web_user" name="web_user" value="" maxlength="8" placeholder="Username">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%">Password</td>
+                        <td>
+                            <input type="password" id="web_pass" name="web_pass" value="" maxlength="8" placeholder="Password">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="width:20%"></td>
+                        <td>
+                            <p><input type="submit" class="sm" value = "Apply" /></p>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </form> 
+        </fieldset>
+    </div>
+</body>    
+
+<script>
+    function updatedhcp() {
+    document.getElementById("ip_0").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("ip_1").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("ip_2").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("ip_3").disabled = document.getElementById("dhcp").checked;
+  
+    document.getElementById("nm_0").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("nm_1").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("nm_2").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("nm_3").disabled = document.getElementById("dhcp").checked;
+  
+    document.getElementById("gw_0").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("gw_1").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("gw_2").disabled = document.getElementById("dhcp").checked;
+    document.getElementById("gw_3").disabled = document.getElementById("dhcp").checked;
+
+    }
+
+    // Get the Sidebar
+var mySidebar = document.getElementById("mySidebar");
+
+// Get the DIV with overlay effect
+var overlayBg = document.getElementById("myOverlay");
+
+// Toggle between showing and hiding the sidebar, and add overlay effect
+function w3_open() {
+  if (mySidebar.style.display === 'block') {
+    mySidebar.style.display = 'none';
+    overlayBg.style.display = "none";
+  } else {
+    mySidebar.style.display = 'block';
+    overlayBg.style.display = "block";
+  }
+}
+
+// Close the sidebar with the close button
+function w3_close() {
+  mySidebar.style.display = "none";
+  overlayBg.style.display = "none";
+}
+  </script>
+
+</html>
