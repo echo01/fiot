@@ -36,7 +36,7 @@ char msg[100];
 
 const char* host = "ESPLINK";
 const char* ssid = "BANONGLEE_2.4G";
-const char* password = "WANVIM27";
+const char* password = ".....";
 
 const char* ap_ssid = "Fiot_st01";
 const char* ap_password = "st0123456";
@@ -45,11 +45,11 @@ int cntSTA_wifi;
 // const char* ssid = "Park_2.4G";
 // const char* password = "park6789";
 
-const char* mqtt_server = "broker.netpie.io";
+const char* mqtt_server = ".....";
 const int mqtt_port = 1883;
-const char* mqtt_Client = "816720d3-eefe-4137-a9c0-70fa4b44575a";
-const char* mqtt_username = "vEWV6uvyqT4HVLCFR1W5Kihudk83NWFx";
-const char* mqtt_password = "YFLPzsSYMv7wMnUrBXNAXSWC1LhQ1bon";
+const char* mqtt_Client = "......";
+const char* mqtt_username = ".....";
+const char* mqtt_password = ".....";
 const char *www_username = "admin";
 const char *www_password = "admin";
 
@@ -62,7 +62,7 @@ const String f_cert_ca="/keys/cert_ca.pem";
 #define AWS_IOT_SUBSCRIBE_TOPIC "fiot/sub"
 
 #define THINGNAME "Fiot_node1"                         //change this
-const char AWS_IOT_ENDPOINT[] = "a139oq97p2bh91-ats.iot.us-east-1.amazonaws.com";       //change this
+const char AWS_IOT_ENDPOINT[] = ".....";       //change this
 size_t totalSize = 0;
 File file;
 File root;
