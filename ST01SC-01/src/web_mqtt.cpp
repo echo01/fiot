@@ -20,7 +20,7 @@ const char web_mqtt_setting[] PROGMEM = R"rawliteral(
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="/css/w3.css">
-        <!-- <link rel="stylesheet" href="css/font-awesome-min.css"> -->
+        <link rel="stylesheet" href="css/fontawesome.css">
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
         <!-- <link rel="stylesheet" href="css/fonts-googleapis-raleway.css"> -->
         <!-- <link rel="stylesheet" href="css/bootstrap.min.css"> -->
@@ -85,6 +85,15 @@ const char web_mqtt_setting[] PROGMEM = R"rawliteral(
                         </td>
                     </tr>
                     <tr>
+                        <td style="width:20%">Protocol</td>
+                        <td>
+                              <select id="mqtt_ssl" name="mqtt_ssl" onclick="updatemqtt_ssl();">
+                                  <option value="1">mqtts/tls</option>
+                                  <option value="0">mqll/tcp</option>
+                              </select>
+                        </td>
+                    </tr>
+                    <tr>
                         <td style="width:20%">Device Name</td>
                         <td>
                             <input type="text" style="width:60%" id="client_name" name="client_name" maxlength="32" value="" placeholder="Host max 32 char">
@@ -123,7 +132,7 @@ const char web_mqtt_setting[] PROGMEM = R"rawliteral(
                     <tr>
                         <td style="width:20%">Pub period (s)</td>
                         <td>
-                            <input type="number" style="width:60%" id="pub_period" name="pub_period" value="10" max="99999">
+                            <input type="number" style="width:60%" id="pub_period" name="pub_period" value="10" max="99999" min="5">
                         </td>
                     </tr>
                     <tr>
@@ -152,6 +161,20 @@ const char web_mqtt_setting[] PROGMEM = R"rawliteral(
                   <input type="submit" value="Upload">
                 </td>
             </tr> 
+            <tr>
+                <td style="width:20%"></td>
+                <td style="width:50%">Name</td>
+                <td style="width:40%">Status</td>
+            </tr> 
+            <tr>
+                <td style="width:20%">Current file</td>
+                <td>
+                  <input type="text" style="width:50%" id="cert_ca_name" name="cert_ca_name" value="" readonly>
+                </td>
+                <td>
+                <input type="text" style="width:40%" id="cert_ca_status" name="cert_ca_status" readonly>
+                </td>
+            </tr>
           </table>
 
         </form>
@@ -171,7 +194,21 @@ const char web_mqtt_setting[] PROGMEM = R"rawliteral(
                 <td>
                   <input type="submit" value="Upload">
                 </td>
-            </tr> 
+            </tr>
+            <tr>
+                <td style="width:20%"></td>
+                <td style="width:50%">Name</td>
+                <td style="width:40%">Status</td>
+            </tr>  
+            <tr>
+                <td style="width:20%">Current file</td>
+                <td>
+                  <input type="text" style="width:50%" id="cert_crt_name" name="cert_crt_name" value="" readonly>
+                </td>
+                <td>
+                <input type="text" style="width:40%" id="cert_crt_status" name="cert_crt_status" readonly>
+                </td>
+            </tr>
           </table>
         </form>
         </fieldset>
@@ -190,7 +227,21 @@ const char web_mqtt_setting[] PROGMEM = R"rawliteral(
                 <td>
                   <input type="submit" value="Upload">
                 </td>
-            </tr> 
+            </tr>
+            <tr>
+                <td style="width:20%"></td>
+                <td style="width:50%">Name</td>
+                <td style="width:40%">Status</td>
+            </tr>  
+            <tr>
+                <td style="width:20%">Current file</td>
+                <td>
+                  <input type="text" style="width:50%" id="cert_pri_name" name="cert_pri_name" value="" readonly>
+                </td>
+                <td>
+                <input type="text" style="width:40%" id="cert_pri_status" name="cert_pri_status" readonly>
+                </td>
+            </tr>
           </table>
         </form>
         </fieldset>
@@ -247,6 +298,18 @@ function openTab(evt, tabName) {
 }
 
 document.getElementById("Tab1").style.display = "block";
+function updatemqtt_ssl(){
+  if(document.getElementById("mqtt_ssl").value==0)
+  { // mqtt/tcp
+  document.getElementById("user_mqtt").disabled = false;
+  document.getElementById("pass_mqtt").disabled = false;
+  }
+  else
+  { // mqtts/tls
+  document.getElementById("user_mqtt").disabled = true;
+  document.getElementById("pass_mqtt").disabled = true;
+  }
+}
 
 function update_load_data_set() {
       // ใช้ AJAX เพื่อดึงข้อมูลจาก '/getADC'
@@ -264,6 +327,15 @@ function update_load_data_set() {
           document.getElementById('pub_mqtt').value = json_data_set.pub_mqtt;
           document.getElementById('sub_mqtt').value = json_data_set.sub_mqtt;
           document.getElementById('pub_period').value = json_data_set.pub_period;
+
+          document.getElementById('mqtt_ssl').value = json_data_set.mqtt_ssl;
+
+          document.getElementById('cert_ca_name').value = json_data_set.cert_ca_name;
+          document.getElementById('cert_ca_status').value = json_data_set.cert_ca_status;
+          document.getElementById('cert_crt_name').value = json_data_set.cert_crt_name;
+          document.getElementById('cert_crt_status').value = json_data_set.cert_crt_status;
+          document.getElementById('cert_pri_name').value = json_data_set.cert_pri_name;
+          document.getElementById('cert_pri_status').value = json_data_set.cert_pri_status;
         }
       };
       xhr.open("GET", "/up_mqtt_set", true);
@@ -274,15 +346,13 @@ window.onload = function ()
     {
     update_load_data_set(); 
     openTab(event, 'Tab1');
+    updatemqtt_ssl();
     }
 </script>
 </html>
 )rawliteral";
 
-void init_apit_web_mqtt()
-{
-    
-}
+
 
 void init_apt_web_mqtt_setting()
 {
@@ -358,6 +428,13 @@ void init_apt_web_mqtt_setting()
         st01.mqtt.pub_period = inputValue.toInt();
       }
 
+    inputName ="mqtt_ssl";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        Serial.println("mqtt_ssl " + inputName + ": " + inputValue);
+        // line_bot.move_time = inputValue.toInt();
+        st01.mqtt.mqtt_ssl= inputValue.toInt();
+      }
     WriteConfig();
     delay(10);
     request->send(200, "text/html",web_mqtt_setting);
@@ -376,10 +453,30 @@ void api_get_web_mqtt_setting()
     json_data_set += "\"pass_mqtt\":\"" + String(st01.mqtt.pass)+"\"" + ",";
     json_data_set += "\"pub_mqtt\":\"" + String(st01.mqtt.pub)+"\""+ ",";
     json_data_set += "\"sub_mqtt\":\"" + String(st01.mqtt.sub)+"\""+ ",";
-    json_data_set += "\"pub_period\":" + String(st01.mqtt.pub_period)+",";
+    json_data_set += "\"mqtt_ssl\":\"" + String(st01.mqtt.mqtt_ssl)+"\""+ ",";
+    // json_data_set += "\"pub_period\":" + String(st01.mqtt.pub_period)+",";
     // json_data_set += "\"cert_ca_text\":\"" + String(st01.mqtt.AWS_CERT_CA1)+"\""+",";
     // json_data_set += "\"cert_crt_text\":\"" + String(st01.mqtt.AWS_CERT_CRT1)+"\""+",";
     // json_data_set += "\"cert_pri_text\":\"" + String(st01.mqtt.AWS_CERT_PRIVATE1)+"\"";
+    //--------------- Cert file CA----------------//
+    json_data_set += "\"cert_ca_name\":\"" + String(st01.mqtt.cert_ca_fs_name)+"\""+ ",";
+    if(st01.mqtt.cert_ca_ready)
+      json_data_set += "\"cert_ca_status\":\""+String("OK")+"\""+ ",";
+    else
+      json_data_set += "\"cert_ca_status\":\""+String("Not OK")+"\""+ ",";
+    //--------------- Cert file CRT----------------//
+    json_data_set += "\"cert_crt_name\":\"" + String(st01.mqtt.cert_crt_fs_name)+"\""+ ",";
+    if(st01.mqtt.cert_crt_ready)
+      json_data_set += "\"cert_crt_status\":\""+String("OK")+"\""+ ",";
+    else
+      json_data_set += "\"cert_crt_status\":\""+String("Not OK")+"\""+ ",";
+    //--------------- Cert file PRI----------------//
+    json_data_set += "\"cert_pri_name\":\"" + String(st01.mqtt.cert_pri_fs_name)+"\""+ ",";
+    if(st01.mqtt.cert_pri_ready)
+      json_data_set += "\"cert_pri_status\":\""+String("OK")+"\""+ ",";
+    else
+      json_data_set += "\"cert_pri_status\":\""+String("Not OK")+"\""+ ",";
+
     json_data_set += "\"pub_period\":\"" + String(st01.mqtt.pub_period)+"\"";
     json_data_set += "}";
     Serial.printf("\r\nup_mqtt_set json=%s ",json_data_set.c_str());

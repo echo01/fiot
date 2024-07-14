@@ -109,10 +109,41 @@ boolean ReadConfig()
 //	Serial.println("Reading Configuration");
 	if (EEPROM.read(0) == 'C' && EEPROM.read(1) == 'F'  && EEPROM.read(2) == 'G' )
 	{
-
+    st01.net.dhcp=EEPROM.read(16);
+    // EEPROM.write(16,st01.net.dhcp);
+	  // EEPROM.write(17,st01.net.localIp[0]);
+    // EEPROM.write(18,st01.net.localIp[0]);
+    // EEPROM.write(19,st01.net.localIp[0]);
+    // EEPROM.write(20,st01.net.localIp[0]);
+    ReadArrayFromEEPROM(17,st01.net.ip,4);
     ReadArrayFromEEPROM(21,st01.net.subnet,4);
     ReadArrayFromEEPROM(25,st01.net.gatway,4);
     ReadArrayFromEEPROM(29,st01.net.dns,4);
+    Serial.printf("dhcp:%d\r\n",st01.net.dhcp);
+    Serial.printf("ip:%d.%d.%d.%d\r\n",st01.net.ip[0],st01.net.ip[1],st01.net.ip[2],st01.net.ip[3]); 
+    Serial.printf("sub:%d.%d.%d.%d\r\n",st01.net.subnet[0],st01.net.subnet[1],st01.net.subnet[2],st01.net.subnet[3]); 
+    Serial.printf("gw:%d.%d.%d.%d\r\n",st01.net.gatway[0],st01.net.gatway[1],st01.net.gatway[2],st01.net.gatway[3]); 
+    Serial.printf("dns:%d.%d.%d.%d\r\n",st01.net.dns[0],st01.net.dns[1],st01.net.dns[2],st01.net.dns[3]); 
+    st01.net.localIp[0]=st01.net.ip[0];
+    st01.net.localIp[1]=st01.net.ip[1];
+    st01.net.localIp[2]=st01.net.ip[2];
+    st01.net.localIp[3]=st01.net.ip[3];
+
+    st01.net.localSubnet[0]=st01.net.subnet[0];
+    st01.net.localSubnet[1]=st01.net.subnet[1];
+    st01.net.localSubnet[2]=st01.net.subnet[2];
+    st01.net.localSubnet[3]=st01.net.subnet[3];
+
+    st01.net.localGateWay[0]=st01.net.gatway[0];
+    st01.net.localGateWay[1]=st01.net.gatway[1];
+    st01.net.localGateWay[2]=st01.net.gatway[2];
+    st01.net.localGateWay[3]=st01.net.gatway[3];
+
+    st01.net.localDns[0]=st01.net.dns[0];
+    st01.net.localDns[1]=st01.net.dns[1];
+    st01.net.localDns[2]=st01.net.dns[2];
+    st01.net.localDns[3]=st01.net.dns[3];
+
     ReadArrayFromEEPROM(81,(uint8_t *)st01.net.ssid,32);
     ReadArrayFromEEPROM(113,(uint8_t *)st01.net.password,32);
 
@@ -136,7 +167,9 @@ boolean ReadConfig()
     ReadArrayFromEEPROM(671,(uint8_t *)st01.mqtt.cert_ca_fs_name,129);
     ReadArrayFromEEPROM(800,(uint8_t *)st01.mqtt.cert_crt_fs_name,129);
     ReadArrayFromEEPROM(929,(uint8_t *)st01.mqtt.cert_pri_fs_name,129);
+    st01.mqtt.mqtt_ssl=EEPROM.read(1059);
 
+    Serial.printf("mqtt ssl:%d\r\n",st01.mqtt.mqtt_ssl); 
     Serial.printf("host:%s\r\n",st01.mqtt.host_name); 
     Serial.printf("port:%d\r\n",st01.mqtt.port); 
     Serial.printf("Device:%s\r\n",st01.mqtt.device_name); 
@@ -188,10 +221,22 @@ boolean ReadConfig()
     memcpy(st01.net.web_pass,"admin",sizeof("admin"));
     memcpy(st01.net.web_user,"admin",sizeof("admin"));
 
+    st01.net.ap_ssid_en=1;
     memcpy(st01.net.ap_ssid,"Ftot_st01",sizeof("Ftot_st01"));
     memcpy(st01.net.ap_password,"st0123456",sizeof("st0123456"));
-    st01.net.ap_ssid_en=1;
+    Serial.println("AP SSID");
+    Serial.printf("ssid:%s\r\n",st01.net.ap_ssid); 
+    Serial.printf("pass:%s\r\n",st01.net.ap_password); 
+    
     st01.net.ssid_en=1;
+    memcpy(st01.net.ssid,"BANONGLEE_2.4G",sizeof("BANONGLEE_2.4G"));
+    memcpy(st01.net.password,"WANVIM27",sizeof("WANVIM27"));
+    Serial.println("STA SSID");
+    
+    Serial.printf("ssid:%s\r\n",st01.net.ssid); 
+    Serial.printf("pass:%s\r\n",st01.net.password); 
+    
+    st01.mqtt.mqtt_ssl=0;
     st01.mqtt.pub_period=10;
 		return false;
 	}
@@ -205,9 +250,9 @@ void WriteConfig() {
 
 	EEPROM.write(16,st01.net.dhcp);
 	EEPROM.write(17,st01.net.ip[0]);
-  EEPROM.write(18,st01.net.ip[0]);
-  EEPROM.write(19,st01.net.ip[0]);
-  EEPROM.write(20,st01.net.ip[0]);
+  EEPROM.write(18,st01.net.ip[1]);
+  EEPROM.write(19,st01.net.ip[2]);
+  EEPROM.write(20,st01.net.ip[3]);
 
   WriteArrayToEEPROM(21,st01.net.subnet,4);
   WriteArrayToEEPROM(25,st01.net.gatway,4);
@@ -234,6 +279,7 @@ void WriteConfig() {
   EEPROM.write(666,st01.net.ap_ssid_en);
 
   EEPROMWritelong(667,st01.mqtt.pub_period);
+  EEPROM.write(1059,st01.mqtt.mqtt_ssl);
   
 
 	EEPROM.commit();

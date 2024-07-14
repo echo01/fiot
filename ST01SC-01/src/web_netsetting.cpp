@@ -22,15 +22,9 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="/css/w3.css">
-        <!-- <link rel="stylesheet" href="css/font-awesome-min.css"> -->
+        <link rel="stylesheet" href="css/fontawesome.css">
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
-        <!-- <link rel="stylesheet" href="css/fonts-googleapis-raleway.css"> -->
-        <!-- <link rel="stylesheet" href="css/bootstrap.min.css"> -->
         <link rel="stylesheet" href="/css/iotadd.css">
-        <!-- <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script> -->
-        <!-- <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css"> -->
-        <!-- <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway"> -->
-        <!-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> -->
         <style>
         html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
         </style>        
@@ -64,48 +58,49 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
 
     <!-- !PAGE CONTENT! -->
     <div class="w3-main" style="margin-left:300px;margin-top:43px;">
-        <div class="w3-twothird w3-striped w3-white ">
-            <div class="tab w3-twothird w3-striped w3-white">
-                <button class="tablinks" onclick="openTab(event, 'Tab1')">SSID</button>
-                <button class="tablinks" onclick="openTab(event, 'Tab2')">Netconfig</button>
-                <button class="tablinks" onclick="openTab(event, 'Tab3')">Web admin</button>
+        <!-- <div class="w3-twothird w3-striped w3-white "> -->
+            <div class="tab">
+                <button class="tablinks" data-tab-content-id="Tab1" onclick="openTab(event, 'Tab1')">SSID</button>
+                <button class="tablinks" data-tab-content-id="Tab2" onclick="openTab(event, 'Tab2')">Netconfig</button>
+                <button class="tablinks" data-tab-content-id="Tab3" onclick="openTab(event, 'Tab3')">Web admin</button>
             </div>
-        </div>
-
+        <!-- </div> -->
         <div id="Tab1" class="tabcontent">
-            <br>
-            <br>
             <fieldset>
-                <table class="w3-table w3-striped w3-white table-with-margin w3-card-4 w3-white">
-                    <tr>
-                        <td>
-                        <h5 class="table-with-margin w3-card-4 w3-blue" style="margin-top: 10px;">Wi-Fi Scan</h5>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                        <button onclick="scanWiFi()" class="w3-button w3-blue">Scan Wi-Fi</button>
-                        </td>
-                    </tr>
-                </table>
-            </fieldse>
+                    <table class="w3-table w3-striped w3-white w3-card-4 ">
+                        <tr>
+                            <td>
+                            <button onclick="scanWiFi()" class="w3-button w3-blue">Scan Wi-Fi</button>
+                            </td>
+                        </tr>
+                    </table>
+                    <div id="scanProgress" class="w3-light-grey w3-round-xlarge" style="display: none; margin-top: 10px;">
+                        <div id="scanProgressBar" class="w3-container w3-blue w3-round-xlarge" style="width:0%; height: 24px;"></div>
+                    </div>
+            </fieldset>
             <fieldset>
-                <form action="/ssid_set" method="post">
+                <form id="ssidForm" action="/ssid_set" method="post" onsubmit="return handleFormSubmit(event, 'ssidForm')">
                     <div class="w3-twothird">
                     <h5 class="table-with-margin  w3-orange" >STA SSID Config</h5>
                         <table class="w3-table w3-striped w3-white table-with-margin w3-card-4 w3-white">
                             <tr>
                                 <td style="width:20%">STA WIFI</td>
-                                <td><input type="checkbox" align="left" id="ssid_en" name="ssid_en" onclick="update_en_sta_mode();"></td>
+                                <td>
+                                <select id="ssid_en" name="ssid_en" >
+                                    <option value="1">Enable</option>
+                                    <option value="0">Disable</option>
+                                </select>
+                                </td>
                             </tr>
                             <tr>
                                 <td style="width:20%">List</td>
                                 <td>
                                 <select id="wifiNetworks" onchange="updateSSIDField()" >
-                                    <option value="Wifi1 a">Wifi1</option>
-                                    <option value="Wifi2 b">Wifi2</option>
-                                    <option value="Wifi3 c">Wifi3</option>
+                                    <option value="Wifi1 a" data-rssi="-40">Wifi1</option>
+                                    <option value="Wifi2 b" data-rssi="-50">Wifi2</option>
+                                    <option value="Wifi3 c" data-rssi="-60">Wifi3</option>
                                 </select>
+                                <div id="rssiSymbol" class="wifi-signal"></div>
                                 </td>
                             </tr>
                             <tr>
@@ -118,56 +113,66 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
                                 <td style="width:20%">Password</td>
                                 <td>
                                     <input type="password" id="ssid_pass" name="ssid_pass" value="" maxlength="36" placeholder="Password">
+                                    <button type="button" onclick="togglePassword('ssid_pass')" style="margin-left: 10px;">
+                                        <i id="ssid_pass_icon" class="fa fa-eye"></i>
+                                    </button>
                                 </td>
                             </tr>
                             <tr>
                                 <td style="width:20%"></td>
                                 <td>
-                                    <p><input type="submit" class="sm" value = "Apply config" /></p>
+                                    <p><input type="submit" class="sm" value = "save config" /></p>
                                 </td>
                             </tr>
                         </table>
                     </div>
                 </form>
             </fieldset>
-            <fieldset>
-                 <form action="/ap_ssid_set" method="post">
-                    <div class="w3-twothird">
-                    <h5 class="table-with-margin  w3-orange" >AP SSID Network Config</h5>
-                    <table class="w3-table w3-striped w3-white table-with-margin w3-card-4 w3-white">
-                            <tr>
-                                <td style="width:20%">AP WIFI</td>
-                                <td><input type="checkbox" align="left" id="ap_ssid_en" name="ap_ssid_en" onclick="update_en_ap_mode();"></td>
-                            </tr>
-                            <tr>
-                                <td style="width:20%">SSID</td>
-                                <td>
-                                    <input type="text" id="apssid_name" name="apssid_name" value="" maxlength="36" placeholder="ssid">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width:20%">Password</td>
-                                <td>
-                                    <input type="password" id="apssid_pass" name="apssid_pass" value="" maxlength="36" placeholder="Password">
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="width:20%"></td>
-                                <td>
-                                    <p><input type="submit" class="sm" value = "Apply config" /></p>
-                                </td>
-                            </tr>
-                    </table>
-                    </div>
-                 </form>
-            </fieldset>
-        </div>
 
+            <fieldset>
+                <form id="apSsidForm" action="/ap_ssid_set" method="post" onsubmit="return handleFormSubmit(event, 'apSsidForm')">
+                   <div class="w3-twothird">
+                   <h5 class="table-with-margin  w3-orange" >AP SSID Network Config</h5>
+                   <table class="w3-table w3-striped w3-white table-with-margin w3-card-4 w3-white">
+                           <tr>
+                               <td style="width:20%">AP WIFI</td>
+                               <td>
+                               <select id="ap_ssid_en" name="ap_ssid_en" >
+                                   <option value="1">Enable</option>
+                                   <option value="0">Disable</option>
+                               </select>
+                               </td>
+                           </tr>
+                           <tr>
+                               <td style="width:20%">SSID</td>
+                               <td>
+                                   <input type="text" id="apssid_name" name="apssid_name" value="" maxlength="36" placeholder="ssid">
+                               </td>
+                           </tr>
+                           <tr>
+                               <td style="width:20%">Password</td>
+                               <td>
+                                   <input type="password" id="apssid_pass" name="apssid_pass" value="" maxlength="36" placeholder="Password">
+                                   <button type="button" onclick="togglePassword('apssid_pass')" style="margin-left: 10px;">
+                                    <i id="apssid_pass_icon" class="fa fa-eye"></i>
+                                    </button>
+                               </td>
+                           </tr>
+                           <tr>
+                               <td style="width:20%"></td>
+                               <td>
+                                   <p><input type="submit" class="sm" value = "save config" /></p>
+                               </td>
+                           </tr>
+                   </table>
+                   </div>
+                </form>
+           </fieldset>
+        </div>
+ 
         <div id="Tab2" class="tabcontent">
-        <br>
-        <br>
         <fieldset>
-        <form action="/net_config" method="post">
+        <form id="netConfigForm" action="/net_config" method="post" onsubmit="return handleFormSubmit(event, 'netConfigForm')">
             <div class="w3-twothird">
                 <h5 class="table-with-margin  w3-orange" >Device Network Config</h5>
                 <table class="w3-table w3-striped w3-white table-with-margin  w3-white" >
@@ -179,7 +184,13 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
                     </tr>
                     <tr>
                         <td style="width:20%">DHCP Client</td>
-                        <td><input type="checkbox" align="left" id="dhcp" name="dhcp" onclick="updatedhcp();"></td>
+                        <!--<td><input type="checkbox" align="left" id="dhcp" name="dhcp" onclick="updatedhcp();"></td>-->
+                        <td>
+                                <select id="dhcp" name="dhcp" onclick="updatedhcp();">
+                                    <option value="1">Enable</option>
+                                    <option value="0">Disable</option>
+                                </select>
+                        </td>
                     </tr>
                     <tr>
                         <!-- <td><i class="fa fa-user w3-text-blue w3-large"></i></td> -->
@@ -222,7 +233,7 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
                     <tr>
                         <td style="width:20%"></td>
                         <td>
-                                    <p><input type="submit" class="sm" value = "Apply config" /></p>
+                                    <p><input type="submit" class="sm" value = "save config" /></p>
                         </td>
                     </tr>
                 </table>
@@ -233,12 +244,10 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
         </div>
 
         <div id="Tab3" class="tabcontent">
-        <br>
-        <br>
         <fieldset>
-        <form action="/admin_config" method="post">
+        <form id="adminConfigForm" action="/admin_config" method="post" onsubmit="return handleFormSubmit(event, 'adminConfigForm')">
             <div class="w3-twothird">
-                <h5 class="table-with-margin w3-card-4 w3-yellow" style="margin-top: 10px;">Web admin config</h5>
+                <!-- <h5 class="table-with-margin w3-card-4 w3-yellow" style="margin-top: 10px;">Web admin config</h5> -->
                 <table class="w3-table w3-striped w3-white table-with-margin w3-card-4 w3-white">
                     <tr>
                         <td style="width:20%">User</td>
@@ -250,12 +259,15 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
                         <td style="width:20%">Password</td>
                         <td>
                             <input type="password" id="web_pass" name="web_pass" value="" maxlength="8" placeholder="Password">
+                            <button type="button" onclick="togglePassword('web_pass')" style="margin-left: 10px;">
+                                <i id="web_pass_icon" class="fa fa-eye"></i>
+                            </button>
                         </td>
                     </tr>
                     <tr>
                         <td style="width:20%"></td>
                         <td>
-                            <p><input type="submit" class="sm" value = "Apply" /></p>
+                            <p><input type="submit" class="sm" value = "save" /></p>
                         </td>
                     </tr>
                 </table>
@@ -264,24 +276,60 @@ const char web_net_setting[] PROGMEM = R"rawliteral(
         </fieldset>
         </div>
     </div>
+    <div id="saveMessage" class="save-message">
+        Settings saved successfully! and effect after restart
+    </div>
 </body>    
 
 <script>
+    function togglePassword(inputId) {
+    var passwordInput = document.getElementById(inputId);
+    var icon = document.getElementById(inputId + '_icon');
+    
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        icon.className = "fa fa-eye-slash";
+    } else {
+        passwordInput.type = "password";
+        icon.className = "fa fa-eye";
+    }
+}
+
     function updatedhcp() {
-    document.getElementById("ip_0").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("ip_1").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("ip_2").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("ip_3").disabled = document.getElementById("dhcp").checked;
+        if(document.getElementById("dhcp").value==0)
+        {
+        document.getElementById("ip_0").disabled = false;
+        document.getElementById("ip_1").disabled = false;
+        document.getElementById("ip_2").disabled = false;
+        document.getElementById("ip_3").disabled = false;
   
-    document.getElementById("nm_0").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("nm_1").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("nm_2").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("nm_3").disabled = document.getElementById("dhcp").checked;
+        document.getElementById("nm_0").disabled = false;
+        document.getElementById("nm_1").disabled = false;
+        document.getElementById("nm_2").disabled = false;
+        document.getElementById("nm_3").disabled = false;
   
-    document.getElementById("gw_0").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("gw_1").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("gw_2").disabled = document.getElementById("dhcp").checked;
-    document.getElementById("gw_3").disabled = document.getElementById("dhcp").checked;
+        document.getElementById("gw_0").disabled = false;
+        document.getElementById("gw_1").disabled = false;
+        document.getElementById("gw_2").disabled = false;
+        document.getElementById("gw_3").disabled = false;
+        }
+        else
+        {
+        document.getElementById("ip_0").disabled = true;
+        document.getElementById("ip_1").disabled = true;
+        document.getElementById("ip_2").disabled = true;
+        document.getElementById("ip_3").disabled = true;
+  
+        document.getElementById("nm_0").disabled = true;
+        document.getElementById("nm_1").disabled = true;
+        document.getElementById("nm_2").disabled = true;
+        document.getElementById("nm_3").disabled = true;
+  
+        document.getElementById("gw_0").disabled = true;
+        document.getElementById("gw_1").disabled = true;
+        document.getElementById("gw_2").disabled = true;
+        document.getElementById("gw_3").disabled = true;
+        }
 
     }
 
@@ -342,17 +390,19 @@ function update_load_data_set() {
           document.getElementById('ssid_pass').value = json_data_set.ssid_pass;
           document.getElementById('apssid_name').value = json_data_set.apssid_name;
           document.getElementById('apssid_pass').value = json_data_set.apssid_pass;
+
           if(json_data_set.ssid_en==1)
             document.getElementById('ssid_en').checked=true;
           else
             document.getElementById('ssid_en').checked=false;
 
-          document.getElementById('ssid_en').value = json_data_set.ssid_en;
-          document.getElementById('ap_ssid_en').value = json_data_set.ap_ssid_en;
           if(json_data_set.ap_ssid_en==1)
             document.getElementById('ap_ssid_en').checked=true;
           else
             document.getElementById('ap_ssid_en').checked=false;
+
+        document.getElementById('ssid_en').value = json_data_set.ssid_en;
+        document.getElementById('ap_ssid_en').value = json_data_set.ap_ssid_en;
         }
       };
       xhr.open("GET", "/up_net_set", true);
@@ -361,6 +411,25 @@ function update_load_data_set() {
 
 function scanWiFi() {
     var xhttp = new XMLHttpRequest();
+    var progressBar = document.getElementById("scanProgressBar");
+    var progressContainer = document.getElementById("scanProgress");
+    
+    progressContainer.style.display = "block";
+    progressBar.style.width = "0%";
+    
+    var progress = 0;
+    var interval = setInterval(function() {
+        progress += 2; // Increase by 2% every 100ms
+        progressBar.style.width = progress + "%";
+        if (progress >= 100) {
+            clearInterval(interval);
+            setTimeout(function() {
+                progressContainer.style.display = "none";
+            }, 500);
+        }
+    }, 100);
+
+    // var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function() {
         if (this.readyState == 4 && this.status == 200) {
             var networks = JSON.parse(this.responseText);
@@ -376,6 +445,78 @@ function scanWiFi() {
     };
     xhttp.open("GET", "/scan_wifi", true);
     xhttp.send();
+}
+
+
+function updateRSSISymbol(rssi) {
+            var rssiSymbol = document.getElementById('rssiSymbol');
+            rssi = parseInt(rssi, 10);
+
+            if (rssi >= -50) {
+                rssiSymbol.className = 'wifi-signal wifi-signal-4'; // Excellent signal
+            } else if (rssi >= -60) {
+                rssiSymbol.className = 'wifi-signal wifi-signal-3'; // Good signal
+            } else if (rssi >= -70) {
+                rssiSymbol.className = 'wifi-signal wifi-signal-2'; // Fair signal
+            } else {
+                rssiSymbol.className = 'wifi-signal wifi-signal-1'; // Weak signal
+            }
+        }
+
+function updateSSIDField() {
+    var select = document.getElementById("wifiNetworks");
+    var selectedOption = wifiNetworks.options[wifiNetworks.selectedIndex];
+    var ssidField = document.getElementById("ssid_name");
+    var selectedSSID = select.value;
+    var rssi = selectedOption.getAttribute('data-rssi');
+
+    ssidField.value = selectedSSID;
+    // document.getElementById('rssiValue').textContent = 'RSSI: ' + rssi + ' dBm';
+    updateRSSISymbol(rssi);
+}
+
+function update_en_sta_mode(){
+    //document.getElementById("ssid_name").disabled = true;
+    //document.getElementById("ssid_pass").disabled = !document.getElementById("ssid_en").checked;
+
+    if(document.getElementById("ssid_en").checked)
+        document.getElementById("ssid_en").value=1;
+    else
+        document.getElementById("ssid_en").value=0;
+}
+
+function update_en_ap_mode(){
+    //document.getElementById("apssid_name").disabled = !document.getElementById("ap_ssid_en").checked;
+    //document.getElementById("apssid_pass").disabled = !document.getElementById("ap_ssid_en").checked;
+    
+    if(document.getElementById("ap_ssid_en").checked)
+        document.getElementById("ap_ssid_en").value=1;
+    else
+        document.getElementById("ap_ssid_en").value=0;
+}
+
+function showSavePopup() {
+    // alert("Settings saved successfully!");
+
+    var messageElement = document.getElementById('saveMessage');
+    messageElement.style.top = '20px';
+    setTimeout(function() {
+        messageElement.style.top = '-100px';
+    }, 3000);
+}
+
+function handleFormSubmit(event, formId) {
+    event.preventDefault();
+    showSavePopup();
+    // document.getElementById(formId).submit();
+    setTimeout(function() {
+        document.getElementById(formId).submit();
+    }, 1000);
+    return false;
+}
+
+function saveCurrentTab(tabName) {
+    localStorage.setItem('lastActiveTab', tabName);
 }
 
 function openTab(evt, tabName) {
@@ -398,34 +539,29 @@ function openTab(evt, tabName) {
 
   // Add the "active" class to the button that opened the tab
   evt.currentTarget.className += " active";
+  saveCurrentTab(tabName);
 }
 
-function updateSSIDField() {
-    var select = document.getElementById("wifiNetworks");
-    var ssidField = document.getElementById("ssid_name");
-    var selectedSSID = select.value;
-    ssidField.value = selectedSSID;
+function loadLastActiveTab() {
+    var lastActiveTab = localStorage.getItem('lastActiveTab');
+    if (lastActiveTab) {
+        var tablinks = document.getElementsByClassName('tablinks');
+        for (var i = 0; i < tablinks.length; i++) {
+            if (tablinks[i].getAttribute('data-tab-content-id') === lastActiveTab) {
+                        tablinks[i].className += ' active';
+                        var tabContent = document.getElementById(lastActiveTab);
+                        tabContent.style.display = 'block';
+                        break;
+                    }
+        }
+    } else {
+        // Default to the first tab if no tab is saved in local storage
+        document.getElementsByClassName('tablinks')[0].className += ' active';
+        document.getElementsByClassName('tabcontent')[0].style.display = 'block';
+    }
 }
 
-function update_en_sta_mode(){
-    document.getElementById("ssid_name").disabled = true;
-    document.getElementById("ssid_pass").disabled = !document.getElementById("ssid_en").checked;
-    if(document.getElementById("ssid_en").checked)
-        document.getElementById("ssid_en").value=1;
-    else
-        document.getElementById("ssid_en").value=0;
-}
-
-function update_en_ap_mode(){
-    document.getElementById("apssid_name").disabled = !document.getElementById("ap_ssid_en").checked;
-    document.getElementById("apssid_pass").disabled = !document.getElementById("ap_ssid_en").checked;
-    if(document.getElementById("ap_ssid_en").checked)
-        document.getElementById("ap_ssid_en").value=1;
-    else
-        document.getElementById("ap_ssid_en").value=0;
-}
-
-document.getElementById("Tab1").style.display = "block";
+// document.getElementById("Tab1").style.display = "block";
 window.onload = function () 
     {
     document.getElementById("ssid_en").checked=true;
@@ -433,9 +569,11 @@ window.onload = function ()
     document.getElementById("ap_ssid_en").checked=true;
     document.getElementById("ap_ssid_en").value=1;
     update_load_data_set(); 
-    openTab(event, 'Tab1'); 
+    // openTab(event, 'Tab1'); 
+    loadLastActiveTab(); // Replace openTab(event, 'Tab1') with this
     update_en_sta_mode();
     update_en_ap_mode();
+    updatedhcp();
     }
 </script>
 
@@ -598,8 +736,153 @@ void api_get_web_net_setting()
     json_data_set += "\"web_pass\":\"" + String(st01.net.web_pass)+"\"";
     json_data_set += "}";
     Serial.printf("\r\nup_net_set json=%s ",json_data_set.c_str());
-    request->send(200, "application/json", json_data_set);
+    request->send(200, "application/json", json_data_set);  
+
   });
+}
+
+void init_apt_post_net_config()
+{
+    server.on("/net_config", HTTP_POST, [](AsyncWebServerRequest *request){
+    // Loop through each input with name="number" and print its value
+    Serial.println("POST web_ssid_setting");
+
+    String inputName ="dhcp";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.dhcp=inputValue.toInt();
+        Serial.print("dhcp : ");
+        Serial.println(st01.net.dhcp);
+      }
+    
+    inputName ="ip_0";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.ip[0]=inputValue.toInt();
+
+        Serial.print("ip : ");
+        Serial.print(st01.net.ip[0]);Serial.print(".");
+      }
+    inputName ="ip_1";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.ip[1]=inputValue.toInt();
+
+        Serial.print(st01.net.ip[1]);Serial.print(".");
+      }
+    inputName ="ip_2";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.ip[2]=inputValue.toInt();
+
+        Serial.print(st01.net.ip[2]);Serial.print(".");
+      }
+    inputName ="ip_3";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.ip[3]=inputValue.toInt();
+
+        Serial.print(st01.net.ip[3]);
+        Serial.println("");
+      }
+    
+    inputName ="nm_0";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.subnet[0]=inputValue.toInt();
+
+        Serial.print("sub : ");
+        Serial.print(st01.net.subnet[0]);Serial.print(".");
+      }
+    inputName ="nm_1";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.subnet[1]=inputValue.toInt();
+
+        Serial.print(st01.net.subnet[1]);Serial.print(".");
+      }
+    inputName ="nm_2";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.subnet[2]=inputValue.toInt();
+
+        Serial.print(st01.net.subnet[2]);Serial.print(".");
+      }
+    inputName ="nm_3";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.subnet[3]=inputValue.toInt();
+
+        Serial.print(st01.net.subnet[3]);
+        Serial.println("");
+      }
+
+    inputName ="gw_0";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.gatway[0]=inputValue.toInt();
+
+        Serial.print("gatway : ");
+        Serial.print(st01.net.gatway[0]);Serial.print(".");
+      }
+    inputName ="gw_1";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.gatway[1]=inputValue.toInt();
+
+        Serial.print(st01.net.gatway[1]);Serial.print(".");
+      }
+    inputName ="gw_2";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.gatway[2]=inputValue.toInt();
+
+        Serial.print(st01.net.gatway[2]);Serial.print(".");
+      }
+    inputName ="gw_3";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.gatway[3]=inputValue.toInt();
+
+        Serial.print(st01.net.gatway[3]);
+        Serial.println("");
+      }
+
+    inputName ="dns1_0";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.dns[0]=inputValue.toInt();
+
+        Serial.print("dns : ");
+        Serial.print(st01.net.dns[0]);Serial.print(".");
+      }
+    inputName ="dns1_1";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.dns[1]=inputValue.toInt();
+
+        Serial.print(st01.net.dns[1]);Serial.print(".");
+      }
+    inputName ="dns1_2";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.dns[2]=inputValue.toInt();
+
+        Serial.print(st01.net.dns[2]);Serial.print(".");
+      }
+    inputName ="dns1_3";
+    if (request->hasParam(inputName, true)) {
+        String inputValue = request->getParam(inputName, true)->value();
+        st01.net.dns[3]=inputValue.toInt();
+
+        Serial.print(st01.net.dns[3]);
+        Serial.println("");
+      }
+
+    WriteConfig();
+    // request->send(200);
+    request->redirect("/network_setting.html"); // Redirect to /mqtt_setting.html
+    });
 }
 
 void init_apt_web_ssid_setting()
@@ -641,7 +924,7 @@ void init_apt_web_ssid_setting()
 
     WriteConfig();
     // request->send(200);
-    request->send(200, "text/html",web_net_setting);
+    request->redirect("/network_setting.html"); // Redirect to /mqtt_setting.html
   });
 }
 
@@ -682,6 +965,6 @@ void init_apt_ap_web_ssid_setting()
       }
     WriteConfig();
     // request->send(200);
-    request->send(200, "text/html",web_net_setting);
+    request->redirect("/network_setting.html"); // Redirect to /mqtt_setting.html
   });
 }

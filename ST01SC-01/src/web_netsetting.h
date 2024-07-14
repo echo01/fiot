@@ -8,4 +8,4 @@ extern void api_scan_setting();
 extern void scan_ssid();
 extern void init_apt_web_ssid_setting();
 extern void init_apt_ap_web_ssid_setting();
-
+extern void init_apt_post_net_config();

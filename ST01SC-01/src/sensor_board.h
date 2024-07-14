@@ -7,6 +7,8 @@
 #include <WiFi.h>
 #include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include "PubSubClient.h"
+#include "WiFiClientSecure.h"
 
 typedef struct{
     uint8_t mac[6];
@@ -66,6 +68,9 @@ typedef struct
     uint8_t host_status;
     uint16_t cnt_host_connect;
     uint32_t pub_period;
+    uint8_t mqtt_ssl;
+    uint32_t pub_cnt;
+    uint32_t sub_cnt;
 }type_mqtt_conf;
 
 typedef struct 
@@ -95,6 +100,7 @@ extern Adafruit_SGP40 sgp;
 extern Adafruit_SHT31 sht31;
 extern type_st01 st01;
 extern type_mqtt_value mqtt_node;
+extern uint32_t tick_Aws_pub;
 // extern AsyncWebServer server;
 extern void Task_st01_read();
 

@@ -19,7 +19,7 @@ const char web_overview[] PROGMEM = R"rawliteral(
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="stylesheet" href="/css/w3.css">
-<!-- <link rel="stylesheet" href="css/font-awesome.min.css"> -->
+<link rel="stylesheet" href="css/fontawesome.css">
 <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
 <!-- <link rel="stylesheet" href="css/fonts-googleapis-raleway.css"> -->
 <!-- <link rel="stylesheet" href="css/bootstrap.min.css"> -->
@@ -92,7 +92,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           <h2 id="node_rh" name="node_rh">99</h2>
         </div>
         <div class="w3-clear"></div>
-        <h4>Views</h4>
+        <h4>%RH</h4>
       </div>
     </div>
     <div class="w3-quarter">
@@ -119,22 +119,23 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
           <tr>
             <td><i class="fa fa-connectdevelop w3-text-blue w3-large"></i></td>
             <td>Mqtt host</td>
-            <td><i>connected</i></td>
+            <td><span id="host_status" name="host_status"><i>connected</i></span></td>
           </tr>
           <tr>
             <td><i class="fa fa-bell w3-text-red w3-large"></i></td>
-            <td>last update</td>
-            <td><i>15 mins</i></td>
+            <td>Next Public</td>
+            <td><span id="pub_t" name="pub_t"><i>15</i></span></td>
+            <td><i>Sec</i></td>
           </tr>
           <tr>
             <td><i class="fa fa-users w3-text-yellow w3-large"></i></td>
             <td>Public Count</td>
-            <td><i>15</i></td>
+            <td><span id="pub_cnt" name="pub_cnt"><i>15</i></span></td>
           </tr>
           <tr>
             <td><i class="fa fa-comment w3-text-red w3-large"></i></td>
             <td>Subscribe Cout</td>
-            <td><i>25</i></td>
+            <td><span id="sub_cnt" name="sub_cnt"><i>25</i></span></td>
           </tr>
         </table>
       </div>
@@ -186,6 +187,10 @@ function update_node_sensor() {
           document.getElementById('node_t').innerText = adcValues.node_t;
           document.getElementById('node_rh').innerText = adcValues.node_rh;
           document.getElementById('node_voc').innerText = adcValues.node_voc;
+          document.getElementById('host_status').innerText = adcValues.host_status;
+          document.getElementById('pub_cnt').innerText = adcValues.pub_cnt;
+          document.getElementById('sub_cnt').innerText = adcValues.sub_cnt;
+          document.getElementById('pub_t').innerText = adcValues.pub_t;
         }
       };
       xhr.open("GET", "/get_node_sensor", true);
@@ -205,3 +210,27 @@ function update_node_sensor() {
 </html>
 )rawliteral";
 
+void api_get_overview()
+{
+  server.on("/get_node_sensor", HTTP_GET, [](AsyncWebServerRequest *request) {
+    char ValueString[10]; 
+    String adcValues = "{";
+    dtostrf(st01.temperature, 5, 2, ValueString);
+    adcValues += "\"node_t\":" + String(ValueString) + ",";
+    dtostrf(st01.humidity, 5, 2, ValueString);
+    adcValues += "\"node_rh\":" + String(ValueString) + ",";
+    adcValues += "\"node_voc\":" + String(st01.voc_index)+ ",";
+
+    if(st01.mqtt.host_status)
+      adcValues += "\"host_status\":\"" + String("Connect")+"\""+ ",";
+    else
+      adcValues += "\"host_status\":\"" + String("Disconnect")+"\""+ ",";
+    adcValues += "\"pub_cnt\":" + String(st01.mqtt.pub_cnt)+ ",";
+    adcValues += "\"sub_cnt\":" + String(st01.mqtt.sub_cnt)+ ",";  
+    adcValues += "\"pub_t\":" + String(st01.mqtt.pub_period-tick_Aws_pub);
+    adcValues += "}";
+    Serial.println(adcValues.c_str());
+    request->send(200, "application/json", adcValues);
+  });
+
+}
