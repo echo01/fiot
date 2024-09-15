@@ -9,6 +9,8 @@
 #include "sensor_board.h"
 // #include "web_mqtt.h"
 #include "web_overview.h"
+#include "web_mqtt.h"
+#include <ArduinoJson.h>
 
 const char web_overview[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
@@ -26,6 +28,8 @@ const char web_overview[] PROGMEM = R"rawliteral(
 html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </style>
 </head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <body class="w3-light-grey">
 
 <!-- Top container -->
@@ -79,7 +83,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               <h2 id="node_t" name="node_t">99</h2>
             </div>
             <div class="w3-clear"></div>
-            <h4>x-axis g</h4>
+            <h4>x-axis rms virbration m/s</h4>
           </div>
         </div>
         <div class="w3-third w3-margin-bottom">
@@ -89,7 +93,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               <h2 id="node_rh" name="node_rh">99</h2>
             </div>
             <div class="w3-clear"></div>
-            <h4>y-axis g</h4>
+            <h4>y-axis rms virbration m/s</h4>
           </div>
         </div>
         <div class="w3-third w3-margin-bottom">
@@ -99,7 +103,40 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
               <h2 id="node_voc" name="node_voc">23</h2>
             </div>
             <div class="w3-clear"></div>
-            <h4>z-axis g</h4>
+            <h4>z-axis rms virbration m/s</h4>
+          </div>
+        </div>
+      </div>
+
+      <div class="w3-row-padding w3-margin-top">
+        <div class="w3-third w3-margin-bottom">
+          <div class="w3-container w3-red w3-padding-16 w3-card-4">
+            <div class="w3-left"><i class="fa fa-tachometer w3-xxxlarge" aria-hidden="true"></i></div>
+            <div class="w3-right">
+              <h2 id="x_grms" name="x_grms">0</h2>
+            </div>
+            <div class="w3-clear"></div>
+            <h4>x-axis rms m&sup2/s</h4>
+          </div>
+        </div>
+        <div class="w3-third w3-margin-bottom">
+          <div class="w3-container w3-blue w3-padding-16 w3-card-4">
+            <div class="w3-left"><i class="fa fa-tachometer w3-xxxlarge" aria-hidden="true"></i></div>
+            <div class="w3-right">
+              <h2 id="y_grms" name="y_grms">0</h2>
+            </div>
+            <div class="w3-clear"></div>
+            <h4>y-axis rms m&sup2/s</h4>
+          </div>
+        </div>
+        <div class="w3-third w3-margin-bottom">
+          <div class="w3-container w3-teal w3-padding-16 w3-card-4">
+            <div class="w3-left"><i class="fa fa-tachometer w3-xxxlarge"></i></div>
+            <div class="w3-right">
+              <h2 id="z_grms" name="z_grms">0</h2>
+            </div>
+            <div class="w3-clear"></div>
+            <h4>z-axis rms m&sup2/s</h4>
           </div>
         </div>
       </div>
@@ -157,6 +194,18 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 
   </div>
 
+  <div class="w3-container w3-padding-16">
+  <h5>G-Values (X-Axis)</h5>
+  <canvas id="gBarChart_X" width="400" height="100"></canvas>
+  </div>
+  <div class="w3-container w3-padding-16">
+  <h5>G-Values (y-Axis)</h5>
+  <canvas id="gBarChart_Y" width="400" height="100"></canvas>
+  </div>
+  <div class="w3-container w3-padding-16">
+  <h5>G-Values (z-Axis)</h5>
+  <canvas id="gBarChart_Z" width="400" height="100"></canvas>
+  </div>
   
 
   <div class="w3-panel w3-padding-16">
@@ -193,7 +242,7 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
       </div>
       <div class="w3-container w3-padding-16">
         <h5>System Log</h5>
-        <textarea id="logDisplay" rows="10" style="width:100%; max-height: 300px; overflow-y: auto;" readonly></textarea>
+        <textarea id="logDisplay" name="logDisplay" rows="10" style="width:100%; max-height: 300px; overflow-y: auto;" readonly></textarea>
       </div>
 
     </div>
@@ -207,6 +256,75 @@ html,body,h1,h2,h3,h4,h5 {font-family: "Raleway", sans-serif}
 </div>
 
 <script>
+// Dummy data: 256 random values between 0 and 100 for the 'g' on the x-axis
+var gValues = Array.from({length: 256}, () => Math.floor(0));
+
+var ctx = document.getElementById('gBarChart_X').getContext('2d');
+  var gBarChart_X = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length: 256}, (_, i) => ((i + 1)*1000/512).toFixed(2) ), // Labels from 1 to 256 for the x-axis
+      datasets: [{
+        label: 'm²/s',
+        data: gValues, // The data to display
+        backgroundColor: 'rgba(255, 50, 0, 0.5)',
+        borderColor: 'rgba(255, 50, 0, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+var ctx = document.getElementById('gBarChart_Y').getContext('2d');
+  var gBarChart_Y = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length: 256}, (_, i) => ((i + 1)*1000/512).toFixed(2) ), // Labels from 1 to 256 for the x-axis
+      datasets: [{
+        label: 'm²/s',
+        data: gValues, // The data to display
+        backgroundColor: 'rgba(60, 179, 113, 0.5)',
+        borderColor: 'rgba(60, 179, 113, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
+var ctx = document.getElementById('gBarChart_Z').getContext('2d');
+  var gBarChart_Z = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: Array.from({length: 256}, (_, i) => ((i + 1)*1000/512).toFixed(2) ), // Labels from 1 to 256 for the x-axis
+      datasets: [{
+        label: 'm²/s',
+        data: gValues, // The data to display
+        backgroundColor: 'rgba(54, 162, 235, 0.5)',
+        borderColor: 'rgba(54, 162, 235, 1)',
+        borderWidth: 1
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true
+        }
+      }
+    }
+  });
+
 // Get the Sidebar
 var mySidebar = document.getElementById("mySidebar");
 // Get the DIV with overlay effect
@@ -238,12 +356,32 @@ function update_node_sensor() {
           document.getElementById('node_t').innerText = adcValues.node_t;
           document.getElementById('node_rh').innerText = adcValues.node_rh;
           document.getElementById('node_voc').innerText = adcValues.node_voc;
+          document.getElementById('x_grms').innerText = adcValues.x_grms;
+          document.getElementById('y_grms').innerText = adcValues.y_grms;
+          document.getElementById('z_grms').innerText = adcValues.z_grms;
+
           document.getElementById('node_battery').innerText = adcValues.node_battery+" V";
           document.getElementById('node_wifi').innerText = adcValues.node_wifi+" rssi";
           document.getElementById('host_status').innerText = adcValues.host_status;
           document.getElementById('pub_cnt').innerText = adcValues.pub_cnt;
           document.getElementById('sub_cnt').innerText = adcValues.sub_cnt;
           document.getElementById('pub_t').innerText = adcValues.pub_t;
+          
+          var logDisplay = document.getElementById('logDisplay');
+          var logText = `Battery: ${adcValues.node_battery} V\n` +
+                      `WiFi Signal: ${adcValues.node_wifi} rssi\n` +
+                      `Host Status: ${adcValues.host_status}\n` +
+                      `Published Count: ${adcValues.pub_cnt}\n` +
+                      `Subscribed Count: ${adcValues.sub_cnt}\n` +
+                      `Publish Time: ${adcValues.pub_t}\n`+
+                      `mqtt_status: ${adcValues.err_code}\n\n`
+                      ;
+
+        // Append new log data to the existing content
+        logDisplay.value += logText;
+
+        // Scroll to the bottom of the textarea to show the latest entry
+        logDisplay.scrollTop = logDisplay.scrollHeight;
         }
       };
       xhr.open("GET", "/get_node_sensor", true);
@@ -268,14 +406,60 @@ function fetchAngles() {
           zGroup.setAttribute('transform', `rotate(${data.angleZ}, 75, 75)`);
         });
     }
+function updateGBarChart(newGValues) {
+    gBarChart_X.data.datasets[0].data = newGValues;
+    gBarChart_x.update();
 
-    
+    gBarChart_Y.data.datasets[0].data = newGValues;
+    gBarChart_Y.update();
+
+    gBarChart_Z.data.datasets[0].data = newGValues;
+    gBarChart_Z.update();
+  }
+
+function fetchGValues_x() {
+      fetch('/getx_g_values') // Replace <ESP32_IP_ADDRESS> with your ESP32's IP
+        .then(response => response.json())
+        .then(data => {
+          // Update chart data
+          gBarChart_X.data.datasets[0].data = data;
+          gBarChart_X.update();
+        })
+        .catch(error => console.error('Error fetching g-values x:', error));
+    }
+function fetchGValues_y() {
+      fetch('/gety_g_values') // Replace <ESP32_IP_ADDRESS> with your ESP32's IP
+        .then(response => response.json())
+        .then(data => {
+          // Update chart data
+          gBarChart_Y.data.datasets[0].data = data;
+          gBarChart_Y.update();
+        })
+        .catch(error => console.error('Error fetching g-values y:', error));
+    }
+function fetchGValues_z() {
+      fetch('/getz_g_values') // Replace <ESP32_IP_ADDRESS> with your ESP32's IP
+        .then(response => response.json())
+        .then(data => {
+          // Update chart data
+          gBarChart_Z.data.datasets[0].data = data;
+          gBarChart_Z.update();
+        })
+        .catch(error => console.error('Error fetching g-values z:', error));
+    }        
 
   window.onload = function () 
     {
     update_node_sensor(); 
+    //fetchGValues_x();
+    //fetchGValues_y();
+    //fetchGValues_z();
     setInterval(update_node_sensor, 3000);
     setInterval(fetchAngles, 3000); // Fetch angles every second
+
+    setInterval(fetchGValues_x, 4000);
+    setInterval(fetchGValues_y, 4100);
+    setInterval(fetchGValues_z, 4200);
     }
   // Initial update
 </script>
@@ -288,12 +472,25 @@ void api_get_overview()
 {
   server.on("/get_node_sensor", HTTP_GET, [](AsyncWebServerRequest *request) {
     char ValueString[10]; 
+    int16_t err_code=st01.err_log.mqtt_Fail_rc_err+4;
+    String errlog;
+    if(err_code>=10) err_code=9;
+    errlog="\""+String("mqt_status=")+String(mqtt_err[err_code])+"  err_code="+String(st01.err_log.mqtt_Fail_rc_err)+"\"";
     String adcValues = "{";
-    dtostrf(st01.temperature, 5, 2, ValueString);
+    dtostrf(mems_data.x.RmsVelocity*1000, 5, 0, ValueString);
     adcValues += "\"node_t\":" + String(ValueString) + ",";
-    dtostrf(st01.humidity, 5, 2, ValueString);
+    dtostrf(mems_data.y.RmsVelocity*1000, 5, 0, ValueString);
     adcValues += "\"node_rh\":" + String(ValueString) + ",";
-    adcValues += "\"node_voc\":" + String(st01.voc_index)+ ",";
+    dtostrf(mems_data.z.RmsVelocity*1000, 5, 0, ValueString);
+    adcValues += "\"node_voc\":" + String(ValueString)+ ",";
+
+    dtostrf(mems_data.x.RmsG, 5, 3, ValueString);
+    adcValues += "\"x_grms\":" + String(ValueString) + ",";
+    dtostrf(mems_data.y.RmsG, 5, 3, ValueString);
+    adcValues += "\"y_grms\":" + String(ValueString) + ",";
+    dtostrf(mems_data.z.RmsG, 5, 3, ValueString);
+    adcValues += "\"z_grms\":" + String(ValueString)+ ",";
+
     adcValues += "\"node_battery\":" + String(st01.Vbat)+ ",";
     adcValues += "\"node_wifi\":" + String(st01.net.rssi)+ ",";
     if(st01.mqtt.host_status)
@@ -302,10 +499,77 @@ void api_get_overview()
       adcValues += "\"host_status\":\"" + String("Disconnect")+"\""+ ",";
     adcValues += "\"pub_cnt\":" + String(st01.mqtt.pub_cnt)+ ",";
     adcValues += "\"sub_cnt\":" + String(st01.mqtt.sub_cnt)+ ",";  
-    adcValues += "\"pub_t\":" + String(st01.mqtt.pub_period-tick_Aws_pub);
+    adcValues += "\"pub_t\":" + String(st01.mqtt.pub_period-tick_Aws_pub)+ ","; 
+    adcValues += "\"err_code\":" + errlog; 
+
     adcValues += "}";
     Serial.println(adcValues.c_str());
     request->send(200, "application/json", adcValues);
   });
 
+}
+
+void api_get_angle()
+{
+  server.on("/angles", HTTP_GET, [](AsyncWebServerRequest *request){
+    String json;
+    StaticJsonDocument<200> doc;
+    doc["angleX"] = mems_data.roll;
+    doc["angleY"] = mems_data.pitch;
+    doc["angleZ"] = mems_data.yaw;
+    serializeJson(doc, json);
+    request->send(200, "application/json", json);
+  });
+}
+
+void api_get_fft_chart()
+{
+  server.on("/getx_g_values", HTTP_GET, [](AsyncWebServerRequest *request) {
+    StaticJsonDocument<2048> doc;
+    
+    // Populate the JSON array
+    JsonArray array = doc.to<JsonArray>();
+    // mems_data.x.gReal[0]=0;
+    // mems_data.x.gReal[1]=0;
+    for (int i = 0; i < 256; i++) {
+      array.add(mems_data.x.gFFT[i]*0.001);
+      // array.add(mems_data.x.gReal[i]*0.001);
+    }
+    // Send the JSON response
+    String json;
+    serializeJson(doc, json);
+     request->send(200, "application/json", json);
+  });
+  server.on("/gety_g_values", HTTP_GET, [](AsyncWebServerRequest *request) {
+    StaticJsonDocument<2048> doc;
+    
+    // Populate the JSON array
+    JsonArray array = doc.to<JsonArray>();
+    // mems_data.y.gReal[0]=0;
+    // mems_data.y.gReal[1]=0;
+    for (int i = 0; i < 256; i++) {
+      array.add(mems_data.y.gFFT[i]*0.001);
+      // array.add(mems_data.y.gReal[i]*0.001);
+    }
+    // Send the JSON response
+    String json;
+    serializeJson(doc, json);
+     request->send(200, "application/json", json);
+  });
+  server.on("/getz_g_values", HTTP_GET, [](AsyncWebServerRequest *request) {
+    StaticJsonDocument<2048> doc;
+    
+    // Populate the JSON array
+    JsonArray array = doc.to<JsonArray>();
+    // mems_data.z.gReal[0]=0;
+    // mems_data.z.gReal[1]=0;
+    for (int i = 0; i < 256; i++) {
+      array.add(mems_data.z.gFFT[i]*0.001);
+      // array.add(mems_data.z.gReal[i]*0.001);
+    }
+    // Send the JSON response
+    String json;
+    serializeJson(doc, json);
+     request->send(200, "application/json", json);
+  });
 }

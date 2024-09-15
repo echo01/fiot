@@ -28,6 +28,7 @@
 Adafruit_SGP40 sgp;
 Adafruit_SHT31 sht31;
 Ticker Task_Sensor;
+Ticker Task_Adxl345;
 Ticker Aws_pub;
 Ticker Mqtt_pub;
 type_st01 st01sc;
@@ -225,19 +226,52 @@ void publishMessage()
     return;
   }
   Serial.println("Public Data");
-  StaticJsonDocument<200> doc;
+  
+  StaticJsonDocument<256> doc;
   JsonObject data = doc.createNestedObject("data");
-  data["humidity"] = mqtt_node.humidity;
-  data["temperature"] = mqtt_node.temperature;
-  data["VOC"] = mqtt_node.voc_index;
+  // StaticJsonDocument<1024> *doc = new StaticJsonDocument<1024>;
+  // JsonObject data = doc->createNestedObject("data");
+  data["model"] = "vibration_analize";
+  data["version"] = "1.00";
+  data["rssi"] = mqtt_node.rssi;
+  data["Vbat"] = mqtt_node.Vbat;
+  data["xV"] = mems_data.x.RmsVelocity*1000;
+  data["yV"] = mems_data.y.RmsVelocity*1000;
+  data["zV"] = mems_data.z.RmsVelocity*1000;
+  data["xg"] = mems_data.x.RmsG;
+  data["yg"] = mems_data.y.RmsG;
+  data["zg"] = mems_data.z.RmsG;
+  data["xPeakHz"] = mems_data.x.peakFreq;
+  data["yPeakHz"] = mems_data.y.peakFreq;
+  data["zPeakHz"] = mems_data.z.peakFreq;
+
+  // Create a JSON array for the 256 data points (example: xReal data)
+  // JsonArray xDataArray = data.createNestedArray("xData");
+  // for (int i = 0; i < 256; i++) {
+  //   xDataArray.add(String(mems_data.x.gFFT[i], 2).toFloat()); // Add x-axis data to the array
+  // }
+
+  // // Similarly, you can create more arrays for yData, zData if needed
+  // JsonArray yDataArray = data.createNestedArray("yData");
+  // for (int i = 0; i < 256; i++) {
+  //   yDataArray.add(String(mems_data.y.gFFT[i], 2).toFloat()); // Add y-axis data
+  // }
+
+  // JsonArray zDataArray = data.createNestedArray("zData");
+  // for (int i = 0; i < 256; i++) {
+  //   zDataArray.add(String(mems_data.z.gFFT[i], 2).toFloat()); // Add z-axis data
+  // }
 
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client
+  // serializeJson(*doc, jsonBuffer);
+  
 
   client.publish(st01.mqtt.pub, jsonBuffer);
   Serial.println(st01.mqtt.pub);
   Serial.println(jsonBuffer);
   st01.mqtt.pub_cnt++;
+  // delete doc;  // Free the heap memory
 }
  
 void messageHandler(char* topic, byte* payload, unsigned int length)
@@ -257,9 +291,11 @@ void connectAWS()
   if(st01.net.wifiSTA_status==0)
   {
     Serial.println("STA WIFI don't started.");
+    st01.err_log.no_interret=1;
     return;
   }
-    
+  st01.err_log.no_interret=0;
+
   net.setCACert(st01.mqtt.AWS_CERT_CA1);
   net.setCertificate(st01.mqtt.AWS_CERT_CRT1);
   net.setPrivateKey(st01.mqtt.AWS_CERT_PRIVATE1);
@@ -278,6 +314,7 @@ void connectAWS()
     if(st01.mqtt.cnt_host_connect++>60)
       {
         st01.mqtt.host_status=0;
+        st01.err_log.mqtt_Fail_rc_err=client.state();
         break;
       }
     delay(100);
@@ -286,6 +323,8 @@ void connectAWS()
   if (!client.connected())
   {
     Serial.println("AWS IoT Timeout!");
+    st01.err_log.mqtt_connection_err=1;
+    st01.err_log.mqtt_Fail_rc_err=client.state();
     return;
   }
  
@@ -294,6 +333,7 @@ void connectAWS()
   client.subscribe(st01.mqtt.sub);
   Serial.println("AWS IoT Connected!");
   Serial.printf("Subcribe:%s\r\n",st01.mqtt.sub);
+  st01.err_log.mqtt_connection_err=0;
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {
@@ -317,11 +357,15 @@ void mqtt_reconnect() {
       Serial.println("Connected to MQTT broker");
       // client.subscribe("@shadow/data/update");
       client2.subscribe(st01.mqtt.sub);
+      st01.err_log.mqtt_connection_err=0;
     } else {
       st01.mqtt.host_status=0;
       Serial.print("Failed, rc=");
-      Serial.print(client.state());
+      st01.err_log.mqtt_Fail_rc_err=client.state();
+      Serial.print(st01.err_log.mqtt_Fail_rc_err);
       Serial.println(" Retrying in 5 seconds...");
+      st01.err_log.mqtt_connection_err=1;
+      
       delay(5000);
     }
   }
@@ -340,9 +384,18 @@ void publishData() {
   Serial.println("Public Data");
   StaticJsonDocument<200> doc;
   JsonObject data = doc.createNestedObject("data");
-  data["humidity"] = mqtt_node.humidity;
-  data["temperature"] = mqtt_node.temperature;
-  data["VOC"] = mqtt_node.voc_index;
+  data["Vbat"] = mqtt_node.Vbat;
+  data["rssi"] = mqtt_node.rssi;
+
+  data["Xvelocity"] = mems_data.x.RmsVelocity;
+  data["Yvelocity"] = mems_data.y.RmsVelocity;
+  data["Zvelocity"] = mems_data.z.RmsVelocity;
+  data["x_g"] = mems_data.x.RmsG;
+  data["y_g"] = mems_data.y.RmsG;
+  data["z_g"] = mems_data.z.RmsG;
+  data["x_Peak_vibration_Hz"] = mems_data.x.peakFreq;
+  data["y_Peak_vibration_Hz"] = mems_data.y.peakFreq;
+  data["z_Peak_vibration_Hz"] = mems_data.z.peakFreq;
   char jsonBuffer[512];
   serializeJson(doc, jsonBuffer); // print to client
   // client.publish(AWS_IOT_PUBLISH_TOPIC, jsonBuffer);
@@ -518,10 +571,11 @@ void setup() {
   listDir();
 
 
-  Serial.println("");
-  Serial.println("SGP40 test with SHT31 compensation");
+  Serial.println("................");
+  Serial.println("ADXL_345 SENSOR");
   delay(1000);
   Wire.begin();
+  Wire.setClock(400000); // Set I2C clock speed to 400 kHz
   // Wire.setClock(200000);
 #if 0
   if (! sgp.begin()){
@@ -542,7 +596,10 @@ void setup() {
   Task_Sensor.attach(2,st01.read_task);
 #else
   st01.initial_adcBattery();
-  Task_Sensor.attach(2,st01.read_task);
+  Task_Sensor.attach(60,st01.read_task);
+  st01.init_adxl345_module();
+  Task_Adxl345.attach_ms(st01.mems_task_period,st01.read_adxl345_task);
+
 #endif
 
   // Setup Access Point
@@ -613,15 +670,19 @@ void setup() {
   //------ Api for Page Network Setting ----------///
 
   // Route to get current angles
-  server.on("/angles", HTTP_GET, [](AsyncWebServerRequest *request){
-    String json;
-    StaticJsonDocument<200> doc;
-    doc["angleX"] = angleX;
-    doc["angleY"] = angleY;
-    doc["angleZ"] = angleZ;
-    serializeJson(doc, json);
-    request->send(200, "application/json", json);
-  });
+  // server.on("/angles", HTTP_GET, [](AsyncWebServerRequest *request){
+  //   String json;
+  //   StaticJsonDocument<200> doc;
+  //   doc["angleX"] = mems_data.roll;
+  //   doc["angleY"] = mems_data.pitch;
+  //   doc["angleZ"] = mems_data.yaw;
+  //   serializeJson(doc, json);
+  //   request->send(200, "application/json", json);
+  // });
+  api_get_angle();
+  api_get_fft_chart();
+  
+
 
   server.begin();
   // connect mqtt mode

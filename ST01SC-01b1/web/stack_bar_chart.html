@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stacked Bar Chart</title>
+    <style>
+        .stacked-bar {
+            width: 100%;
+            height: 20px;
+            background-color: #333;
+            display: flex;
+        }
+
+        .bar-segment {
+            height: 100%;
+        }
+
+        .green { background-color: green; width: 30%; }
+        .blue { background-color: blue; width: 10%; }
+        .red { background-color: red; width: 15%; }
+        .yellow { background-color: yellow; width: 5%; }
+        .orange { background-color: orange; width: 10%; }
+        .light-green { background-color: lightgreen; width: 30%; }
+
+        .chart-container {
+            background-color: black;
+            padding: 10px;
+            color: white;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            width: 90%;
+            margin: 20px auto;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <div class="stacked-bar">
+            <div class="bar-segment green"></div>
+            <div class="bar-segment blue"></div>
+            <div class="bar-segment red"></div>
+            <div class="bar-segment yellow"></div>
+            <div class="bar-segment orange"></div>
+            <div class="bar-segment light-green"></div>
+        </div>
+        <div style="text-align: center;">Part B - 4:46:08 PM</div>
+    </div>
+</body>
+</html>

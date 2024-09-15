@@ -11,6 +11,40 @@
 #include "memory_op.h"
 #include <ArduinoJson.h>
 
+const char mqtt_err[10][48]{
+  "MQTT_CONNECTION_TIMEOUT",
+  "MQTT_CONNECTION_LOST",
+  "MQTT_CONNECT_FAILED",
+  "MQTT_DISCONNECTED",
+  "MQTT_CONNECTED",
+  "MQTT_CONNECT_BAD_PROTOCOL",
+  "MQTT_CONNECT_BAD_CLIENT_ID",
+  "MQTT_CONNECT_UNAVAILABLE",
+  "MQTT_CONNECT_BAD_CREDENTIALS",
+  "MQTT_CONNECT_UNAUTHORIZED"
+};
+
+// Here are the possible return values of client.state() and their meanings:
+// -4 (MQTT_CONNECTION_TIMEOUT):
+// The server didn't respond within the specified time.
+// -3 (MQTT_CONNECTION_LOST):
+// The connection to the server was lost.
+// -2 (MQTT_CONNECT_FAILED):
+// The network connection failed.
+// -1 (MQTT_DISCONNECTED):
+// The client is disconnected.
+// 0 (MQTT_CONNECTED):
+// The client is connected to the broker.
+// 1 (MQTT_CONNECT_BAD_PROTOCOL):
+// The server doesn't support the requested version of the MQTT protocol.
+// 2 (MQTT_CONNECT_BAD_CLIENT_ID):
+// The server rejected the client identifier.
+// 3 (MQTT_CONNECT_UNAVAILABLE):
+// The server is unavailable.
+// 4 (MQTT_CONNECT_BAD_CREDENTIALS):
+// The username/password provided by the client were rejected by the server.
+// 5 (MQTT_CONNECT_UNAUTHORIZED):
+// The client was not authorized to connect.
 
 int loop_file=0;
 

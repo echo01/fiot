@@ -12,3 +12,5 @@ extern void upload_cert_ca_file();
 extern void upload_cert_crt_file();
 extern void upload_file_private_file();
 
+extern const char mqtt_err[10][48];
+
