@@ -34,6 +34,15 @@ void NodeNetwork::logMessage(const String &message) {
     }
 }
 
+void NodeNetwork::printHexBuffer(const char *buffer, size_t length) {
+    for (size_t i = 0; i < length; i++) {
+        if (buffer[i] < 0x10) Serial.print("0"); // pad with 0
+        Serial.print(buffer[i], HEX);
+        Serial.print(" ");
+    }
+    Serial.println();
+}
+
 void NodeNetwork::setIP(IPAddress ip, IPAddress gw, IPAddress sb, IPAddress dnsServer, bool dhcpMode) {
     localIP = ip;
     gateway = gw;
@@ -53,6 +62,9 @@ void NodeNetwork::applyConfig() {
             logMessage("✅ Static IP Configuration Applied:");
         }
     }
+    String NodeMac=ETH.macAddress();
+    NodeMac.replace(":","");
+    NodeName = "KM07T"+NodeMac;
     printNetworkInfo();
 }
 
@@ -75,7 +87,8 @@ void NodeNetwork::startEthernet() {
 
     while (!ETH.linkUp()) {
         logMessage(".");
-        delay(500);
+        // delay(500);
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
     logMessage("\n🔗 Ethernet Connected!");
 
@@ -116,63 +129,93 @@ void NodeNetwork::startTelnetServer() {
 
 
 void NodeNetwork::handleTelnetClients() {
-    for (int i = 0; i < MAX_TELNET_CLIENTS; i++) {
-        if (!telnetClients[i] || !telnetClients[i].connected()) {
-            if (telnetClients[i]) {
-                telnetClients[i].stop();
+
+    if(index_client<MAX_TELNET_CLIENTS)
+    {
+        if (!telnetClients[index_client] || !telnetClients[index_client].connected()) {
+            if (telnetClients[index_client]) {
+                telnetClients[index_client].stop();
                 logMessage("❌ Client Disconnected");
             }
             if (telnetServer.hasClient()) {
-                telnetClients[i] = telnetServer.available();
+                telnetClients[index_client] = telnetServer.available();
                 logMessage("✅ New Client Connected");
             }
         }
-        if (telnetClients[i] && telnetClients[i].available()) {
-            queueClientData(i);
+        if (telnetClients[index_client] && telnetClients[index_client].available()) {
+            queueClientData(index_client);
         }
+        if(activeClient==-1)
+            index_client++;
+    }
+    else
+    {
+        index_client=0;
     }
 }
 
 void NodeNetwork::queueClientData(int clientIndex) {
+    if (activeClient != -1) {
+        logMessage("⚠️ Another client is being processed, delaying Client " + String(clientIndex));
+        return;
+    }
+    activeClient = clientIndex;  // Mark this client as active
+    logMessage("📩 Received from Client" + String(clientIndex));
+    memset(rxBuffer[clientIndex], 0, BUFFER_SIZE);
     int len = telnetClients[clientIndex].readBytes(rxBuffer[clientIndex], BUFFER_SIZE - 1);
+    
     if (len > 0) {
         rxBuffer[clientIndex][len] = '\0';
-        logMessage("📩 Received from Client"+String(clientIndex)+": " + String(rxBuffer[clientIndex])+"size :"+String(len));
-        // serial1->println(rxBuffer[clientIndex]); // Send to Serial
-        uint8_t mb_length = len;
-         int count_message = 0;
-        for (count_message = 0; count_message < mb_length; count_message++)
-          {
-            serial1->write(rxBuffer[clientIndex][count_message]);
-          }
-        waitForSerialResponse(clientIndex);
+        printHexBuffer(rxBuffer[clientIndex],len);
+        // Send data to Serial1
+        for (int i = 0; i < len; i++) {
+            serial1->write(rxBuffer[clientIndex][i]);
+        }
+
+        waitForSerialResponse(clientIndex); // Wait for the serial response
     }
+
+    while (telnetClients[clientIndex].available()) {
+        telnetClients[clientIndex].read(); // discard extra bytes
+    }
+    activeClient = -1; // Reset active client after processing
 }
+
 
 void NodeNetwork::waitForSerialResponse(int clientIndex) {
     unsigned long startTime = millis();
-    int len_avaiable;
-    while ((millis() - startTime) < 3000) { // 3-second timeout
+    int totalLen = 0;
+    
+    while ((millis() - startTime) < 500) {  // 3-second timeout
         if (serial1->available()) {
-            int len = serial1->available();
-            serial1->readBytes(txBuffer[clientIndex], len);
-            if (len > 0) {
-                txBuffer[clientIndex][len] = '\0';
-                logMessage("📤 Received from Serial: " + String(txBuffer[clientIndex]));
-                sendClientResponse(clientIndex,len);
-                return;
+            while (serial1->available()) {
+                char c = serial1->read();
+                txBuffer[clientIndex][totalLen++] = c;
+                if (totalLen >= BUFFER_SIZE - 1) break; // Avoid buffer overflow
             }
+
+            txBuffer[clientIndex][totalLen] = '\0';  // Null terminate the response
+            sendClientResponse(clientIndex, totalLen);
             return;
         }
+        // delay(5);
+        vTaskDelay(pdMS_TO_TICKS(5));
     }
-    logMessage("⚠️ Serial Response Timeout for Client " + String(clientIndex));
+    // logMessage("⚠️ Serial Response Timeout for Client " + String(clientIndex));
+    if(telnetClients[clientIndex].available())
+        {
+        totalLen=telnetClients[clientIndex].available();
+        totalLen=telnetClients[clientIndex].readBytes(rxBuffer[clientIndex], BUFFER_SIZE - 1);
+        rxBuffer[clientIndex][0]='\0';
+        }
 }
+
 
 void NodeNetwork::sendClientResponse(int clientIndex,int len) {
     if((len>0)&&(telnetClients[clientIndex].connected())) 
     {
+        printHexBuffer(txBuffer[clientIndex],len);
         telnetClients[clientIndex].write(txBuffer[clientIndex],len);
-        logMessage("📨 Sent to Client"+String(clientIndex)+": " + String(txBuffer[clientIndex])+"size :"+String(len));
         memset(txBuffer[clientIndex], 0, BUFFER_SIZE);
     }
 }
@@ -182,7 +225,7 @@ void NodeNetwork::taskTelnet(void *param)
     NodeNetwork *self = static_cast<NodeNetwork*>(param);
     while (true) {
         self->handleTelnetClients();
-        vTaskDelay(pdMS_TO_TICKS(20)); // Allow parallel execution with main loop
+        vTaskDelay(pdMS_TO_TICKS(50)); // Allow parallel execution with main loop
     }
 }
 
@@ -202,6 +245,76 @@ void NodeNetwork::taskNetwork(void *param)
     }
 }
 
+void NodeNetwork::taskMDNS(void *param)
+{
+    NodeNetwork *self = static_cast<NodeNetwork*>(param);
+
+    // Wait for Ethernet to connect before starting mDNS
+    while (!ETH.linkUp()) {
+        self->logMessage("⏳ Waiting for Ethernet link before starting mDNS...");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    self->logMessage("🌐 Starting mDNS service...");
+
+    if (MDNS.begin(self->NodeName.c_str())) {  // Change to your preferred hostname
+        self->logMessage("✅ mDNS started: http://"+self->NodeName);
+
+        // Optional: advertise telnet service
+        MDNS.addService("Modbus", "tcp", TELNET_PORT);
+
+        // You can also advertise other services, like HTTP or custom ones
+        MDNS.addService("Discovery device", "udp", DISCOVERY_PORT);
+        // MDNS.addService("modbus", "tcp", 502);
+    } else {
+        self->logMessage("❌ Failed to start mDNS responder");
+        vTaskDelete(NULL); // Terminate the task if mDNS fails
+    }
+
+    // Keep the task alive (optional logging or future use)
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(60000)); // Just sleep, no MDNS.update() needed on ESP32
+    }
+}
+
+void NodeNetwork::listenForDiscoveryTask(void* param) {
+    char incomingPacket[255];
+    NodeNetwork *self = static_cast<NodeNetwork*>(param);
+
+    while (!ETH.linkUp()) {
+        self->logMessage("⏳ Waiting for Ethernet link before starting Discovery Service port 8888...");
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+    self->udp.begin(DISCOVERY_PORT);
+
+    while (true) {
+            int packetSize = self->udp.parsePacket();
+            if (packetSize) {
+                int len = self->udp.read(incomingPacket, sizeof(incomingPacket) - 1);
+                if (len > 0) {
+                    incomingPacket[len] = '\0';
+                }
+
+                Serial.print("Discovery request from: ");
+                Serial.println(self->udp.remoteIP());
+
+                if (strcmp(incomingPacket, "Primus") == 0) {
+                    // Serial.println("Valid discovery request received. Sending response...");
+                    self->logMessage("Valid discovery request received. Sending response...");
+                    self->udp.beginPacket(self->udp.remoteIP(), self->udp.remotePort());
+                    self->udp.println("KM-07T");
+                    self->udp.println("📌 MAC Address: " + ETH.macAddress());
+                    self->udp.println(self->useDHCP ? "🌍 IP Address (DHCP): " + ETH.localIP().toString() : "🌍 IP Address (Static): " + self->localIP.toString());
+                    self->udp.println("🛤️  Gateway: " + self->gateway.toString());
+                    self->udp.println("📡 Subnet: " + self->subnet.toString());
+                    self->udp.println("mDNS:"+self->NodeName);
+                    self->udp.endPacket();
+                }
+            }
+        vTaskDelay(pdMS_TO_TICKS(100));  // Slight delay to yield to other tasks
+    }
+}
+
 void NodeNetwork::runTask() {
     logMessage("Modbus over tcp telnet v1.00");
     logMessage("Max Client support :"+String(MAX_TELNET_CLIENTS));
@@ -211,7 +324,6 @@ void NodeNetwork::runTask() {
     xTaskCreatePinnedToCore(
         taskTelnet,
         "TelnetTask",
-        // "handleTelnetClients_ex",
         4096,
         this,
         1,
@@ -222,6 +334,26 @@ void NodeNetwork::runTask() {
     xTaskCreatePinnedToCore(
         taskNetwork,
         "NetworkMonitorTask",
+        4096,
+        this,
+        1,
+        NULL,
+        1
+    );
+
+    xTaskCreatePinnedToCore(
+        taskMDNS,
+        "MDNSTask",
+        4096,
+        this,
+        1,
+        NULL,
+        1
+    );
+
+    xTaskCreatePinnedToCore(
+        listenForDiscoveryTask,
+        "listenDiscoveryTask",
         4096,
         this,
         1,

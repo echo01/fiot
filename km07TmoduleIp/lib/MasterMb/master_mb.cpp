@@ -1,16 +1,16 @@
 #include "master_mb.h"
-#include "mbtable.h"
+// #include "mbtable.h"
 
 #define UART1RX_PIN         5
 #define UART1TX_PIN         17
 
-mbtable tb1(125);
-mbtable tb2(125);
-mbtable tb3(125);
-mbtable tb4(125);
-mbtable tb5(125);
-mbtable tb6(125);
-mbtable tb7(125);
+// mbtable tb1(125);
+// mbtable tb2(125);
+// mbtable tb3(125);
+// mbtable tb4(125);
+// mbtable tb5(125);
+// mbtable tb6(125);
+// mbtable tb7(125);
 
 const uint8_t CRC_HI[] = { 0x00, 0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x01, 0xC0, 0x80, 0x41, 0x00,
   0xC1, 0x81, 0x40, 0x01, 0xC0, 0x80, 0x41, 0x00, 0xC1, 0x81, 0x40, 0x00,

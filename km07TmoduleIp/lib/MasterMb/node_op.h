@@ -6,10 +6,12 @@
 #include <WiFi.h>
 #include <WiFiClient.h>
 #include <WiFiServer.h>
+#include <ESPmDNS.h>
 
 #define MAX_TELNET_CLIENTS 4
-#define TELNET_PORT 23
+#define TELNET_PORT 502
 #define BUFFER_SIZE 512
+#define DISCOVERY_PORT 8888  // UDP Port to listen for discovery requests
 
 class NodeNetwork {
 private:
@@ -23,11 +25,16 @@ private:
     Stream *serial;
     Stream *serial1;
 
+    //  MDNS, mDNS for Dynamically set the mDNS hostname based on MAC/IP
+    String NodeName;
+    //  telnet server
     WiFiServer telnetServer;
     WiFiClient telnetClients[MAX_TELNET_CLIENTS];
+    WiFiUDP udp;
     int index_client;
     String ClientIP;
     String ClientPort;
+    
 
     char rxBuffer[MAX_TELNET_CLIENTS][BUFFER_SIZE];
     char txBuffer[MAX_TELNET_CLIENTS][BUFFER_SIZE];
@@ -41,6 +48,8 @@ private:
     // unsigned long tick_handel;
 
     void logMessage(const String &message);
+    void printHexBuffer(const char *buffer, size_t length);
+
     void handleTelnetClients();
     void queueClientData(int clientIndex);
     void waitForSerialResponse(int clientIndex);
@@ -50,6 +59,8 @@ private:
 public:
     static void taskTelnet(void *param);
     static void taskNetwork(void *param);
+    static void taskMDNS(void *param);
+    static void listenForDiscoveryTask(void* param);
 
     NodeNetwork(IPAddress ip = IPAddress(192, 168, 1, 100), 
                 IPAddress gw = IPAddress(192, 168, 1, 254), 
