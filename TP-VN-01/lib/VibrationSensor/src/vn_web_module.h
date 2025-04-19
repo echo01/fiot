@@ -9,7 +9,7 @@
 #include <WiFiClientSecure.h>
 #include "Ticker.h"
 #include <esp_wifi.h>
-#include "SPIFFS.h"
+
 
 typedef struct{
     char ssid[32];
@@ -103,6 +103,8 @@ public:
     void getMACAddressAsArray(uint8_t macArray[6]);
     void listConnectedDevices();
 
+    static void module_ex(vn_module* instance);
+
     String formatBytes(size_t bytes);
 
     type_network        net;
@@ -113,11 +115,15 @@ public:
     uint8_t         net_status;
     File file;
     File root;
+
+    unsigned long   _sleepInterval;
+    unsigned long   _sleepCount;
+    uint16_t        esp_state;
+    bool            module_weak_up;
 private:
 
     unsigned long   _lastMillis;      // Tracks time for periodic tasks
     unsigned long   _interval;        // Interval for background task
-    
     
     AsyncWebServer http_server;
     WiFiClientSecure mqtt_ssl;

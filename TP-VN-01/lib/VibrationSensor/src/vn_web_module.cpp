@@ -1,7 +1,10 @@
 #include "vn_web_module.h"
 #include <EEPROM.h>
+#include "vn_web_ov.h"
+#include "mems.h"
 
 #define eeprom_size     1256
+RTC_DATA_ATTR bool wokeFromDeepSleep = false;
 
 vn_module::vn_module(unsigned long tkinterval,uint16_t port_http):_interval(tkinterval),http_server(port_http) 
 {
@@ -11,12 +14,12 @@ vn_module::vn_module(unsigned long tkinterval,uint16_t port_http):_interval(tkin
 void vn_module::begin()
 {
     // EEPROM.begin(eeprom_size);
-    // String myString = "BANONGLEE_2.4G";
-    String myString = "Park_2.4G";
+    String myString = "BANONGLEE_2.4G";
+    // String myString = "Park_2.4G";
     // myString = "";
     myString.toCharArray(vn_module::net.ssid,sizeof(net.ssid));
-    // myString = "WANVIM27";
-    myString = "park6789";
+    myString = "WANVIM27";
+    // myString = "park6789";
     myString.toCharArray(vn_module::net.ssid_pws,sizeof(net.ssid_pws));
 
     getMACAddressAsArray(net.mac);
@@ -47,6 +50,7 @@ void vn_module::begin()
     net.status=0;
     try_connect=0;
     delay_interval=0;
+    _sleepInterval=60000;   //  60 sec.
     taskNetwork.attach_ms(_interval, periodicTaskWrapper, this);
 }
 
@@ -80,13 +84,61 @@ void vn_module::printWiFiStatus() {
 
 void vn_module::periodicTaskWrapper(vn_module* instance) {
     instance->network_loop();
+    instance->module_ex(instance);
+}
+
+void vn_module::module_ex(vn_module* instance)
+{
+    unsigned long currentMillis=millis();
+    if(currentMillis-instance->_sleepCount>instance->_sleepInterval)
+    {       //  go to sleep     //
+        instance->_sleepCount=currentMillis;
+        // esp_sleep_enable_ext0_wakeup(GPIO_NUM_12, 1); // Wake on INT1 HIGH
+        Serial.println("Going to sleep. Move to wake...");
+        // delay(1000);
+        // esp_light_sleep_start();
+        // Serial.println("Woke up!");
+        // instance->esp_state=0;
+        esp_sleep_enable_ext0_wakeup(GPIO_NUM_12, 1);  // Wake on HIGH
+        esp_deep_sleep_start();
+    }
+    if(vn_mems.motion_weak_up)
+    {   // still weak up, ater mems interrupt active
+        vn_mems.motion_weak_up=0;
+        instance->_sleepCount=currentMillis;
+    }
+    if(vn_Web.web_active)
+    {   //  still weak up, after web active
+        vn_Web.web_active=false;
+        instance->_sleepCount=currentMillis;
+    }
+    if(instance->module_weak_up)
+    {   //  alway weak up when module_weak_up is true.
+        instance->_sleepCount=currentMillis;
+    }
+    // switch (instance->esp_state)
+    // {
+    // case 0:
+    // default:        //  weak up
+    //     // start network    //
+    //     instance->_sleepCount=currentMillis;
+    //     // instance->net.status=255;
+    //     instance->esp_state=1;
+    //     break;
+    // case 1:
+    // //  weak up
+    //     instance->network_loop();
+    //     break;
+    // }
 }
 
 void vn_module::network_loop()
 {
     switch (net.status)
     {
+    default:
     case 255:   //reconnect
+        Serial.print("Disconnecting to WiFi... reconnect..");
         WiFi.disconnect();
     case VN_NET_START: // Start WIFI
         /* code */
@@ -107,7 +159,9 @@ void vn_module::network_loop()
             Serial.println(net.ap_ssid);
             Serial.println(net.apIp);
             net.status=VN_NET_STARTED;
+            module_weak_up=true;
             }
+            // vn_Web.server.
         break;
     case VN_NET_WAIT_CONNECT: //  wait WIFI connect
         if( (net.mode==VN_NET_MODE_STA)&&(net_status==VN_NET_STA) )
@@ -119,6 +173,7 @@ void vn_module::network_loop()
             if(WiFi.status() == WL_CONNECTED) 
                 {
                 net.status=VN_NET_STARTED;
+                module_weak_up=false;
                 Serial.println("\nWiFi connected.");
                 printWiFiStatus();
                 }
@@ -142,22 +197,17 @@ void vn_module::network_loop()
                 net.status=VN_NET_START;
                 }
             }
-        else
-            {
-            net.status=VN_NET_STARTED;
-            Serial.print("AP: ");
-            Serial.println(net.ap_ssid);
-            Serial.println("\nWiFi Start.");
-            }
+
         break;
     case VN_NET_STARTED: //  WIFI Connected start web server
-        
+        vn_Web.starting_web();
+        net.status=VN_NET_MQTT_START;
         break;
     case VN_NET_MQTT_START:
-    
+
         break;
-    default:
-        break;
+    // default:
+        // break;
     }
     
 }
